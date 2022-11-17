@@ -61,8 +61,8 @@ fn main() -> Result<(), BrainfuckError> {
         match op {
             '+' => memory[ptr] = memory[ptr].wrapping_add(1),
             '-' => memory[ptr] = memory[ptr].wrapping_sub(1),
-            '>' => ptr += 1,
-            '<' => ptr -= 1,
+            '>' => ptr = (ptr.wrapping_add(1)) % memory.len(),
+            '<' => ptr = (ptr.wrapping_sub(1)) % memory.len(),
             '.' => print!("{}", memory[ptr] as char),
             ',' => {
                 memory[ptr] =
