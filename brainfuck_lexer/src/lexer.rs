@@ -10,6 +10,8 @@ pub enum Tolken {
     Print,
     Input,
     Closure(Block),
+    #[cfg(feature = "debug_tolken")]
+    Debug,
 }
 
 pub type Block = Vec<Tolken>;
@@ -22,6 +24,8 @@ const TOLKEN_PRINT: char = '.';
 const TOLKEN_INPUT: char = ',';
 const TOLKEN_LOOP_BEGIN: char = '[';
 const TOLKEN_LOOP_END: char = ']';
+#[cfg(feature = "debug_tolken")]
+const TOLKEN_DEBUG: char = '#';
 
 pub fn lex(src: String) -> Result<Block> {
     let mut slice = src
@@ -71,6 +75,8 @@ where
             TOLKEN_LOOP_BEGIN => Tolken::Closure(lex_closure(iter, true)?),
             TOLKEN_LOOP_END if is_closure => return Ok(block),
             TOLKEN_LOOP_END => Err(LexerError::SyntaxError(ch))?,
+            #[cfg(feature = "debug_tolken")]
+            TOLKEN_DEBUG => Tolken::Debug,
             #[cfg(feature = "comments")]
             _ => continue,
             #[cfg(not(feature = "comments"))]

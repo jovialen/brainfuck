@@ -40,6 +40,26 @@ fn interpret_block(
                     interpret_block(block, memory, ptr)?;
                 }
             }
+            #[cfg(feature = "debug_tolken")]
+            Tolken::Debug => println!(
+                "{:?}",
+                memory
+                    .iter()
+                    .scan(0, |state, &cell| {
+                        if cell == 0 {
+                            *state += 1;
+                        } else {
+                            *state = 0;
+                        }
+
+                        if *state > 3 {
+                            None
+                        } else {
+                            Some(cell)
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            ),
         }
     }
 
