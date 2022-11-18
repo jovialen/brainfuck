@@ -21,7 +21,7 @@ fn get_source_as_str(src: String) -> std::io::Result<String> {
     Ok(get_raw_source_as_str(src)?
         .chars()
         .filter(|c| !c.is_whitespace())
-        .collect::<String>())
+        .collect())
 }
 
 fn main() -> Result<(), BrainfuckError> {
