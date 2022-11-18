@@ -13,14 +13,14 @@ pub enum Tolken {
 
 pub type Block = Vec<Tolken>;
 
-const INCREMENT: char = '+';
-const DECREMENT: char = '-';
-const NEXT: char = '>';
-const PREV: char = '<';
-const PRINT: char = '.';
-const INPUT: char = ',';
-const LOOP_BEGIN: char = '[';
-const LOOP_END: char = ']';
+const TOLKEN_INCREMENT: char = '+';
+const TOLKEN_DECREMENT: char = '-';
+const TOLKEN_NEXT: char = '>';
+const TOLKEN_PREV: char = '<';
+const TOLKEN_PRINT: char = '.';
+const TOLKEN_INPUT: char = ',';
+const TOLKEN_LOOP_BEGIN: char = '[';
+const TOLKEN_LOOP_END: char = ']';
 
 pub fn lex(src: String) -> Result<Block> {
     let mut slice = src.chars().into_iter();
@@ -35,15 +35,15 @@ where
 
     while let Some(ch) = iter.next() {
         let op = match ch {
-            INCREMENT => Tolken::Increment,
-            DECREMENT => Tolken::Decrement,
-            NEXT => Tolken::Next,
-            PREV => Tolken::Prev,
-            PRINT => Tolken::Print,
-            INPUT => Tolken::Input,
-            LOOP_BEGIN => Tolken::Closure(lex_closure(iter, true)?),
-            LOOP_END if is_closure => return Ok(block),
-            LOOP_END => Err(LexerError::SyntaxError(ch))?,
+            TOLKEN_INCREMENT => Tolken::Increment,
+            TOLKEN_DECREMENT => Tolken::Decrement,
+            TOLKEN_NEXT => Tolken::Next,
+            TOLKEN_PREV => Tolken::Prev,
+            TOLKEN_PRINT => Tolken::Print,
+            TOLKEN_INPUT => Tolken::Input,
+            TOLKEN_LOOP_BEGIN => Tolken::Closure(lex_closure(iter, true)?),
+            TOLKEN_LOOP_END if is_closure => return Ok(block),
+            TOLKEN_LOOP_END => Err(LexerError::SyntaxError(ch))?,
             #[cfg(feature = "comments")]
             _ => continue,
             #[cfg(not(feature = "comments"))]
