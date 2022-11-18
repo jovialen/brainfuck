@@ -42,7 +42,16 @@ pub fn lex(src: String) -> Result<Block> {
             }
         });
 
-    lex_closure(&mut slice, false)
+    let res = lex_closure(&mut slice, false)?
+        .into_iter()
+        .filter(|v| match v {
+            // Filter out empty closures
+            Tolken::Closure(block) => !block.is_empty(),
+            _ => true,
+        })
+        .collect();
+
+    Ok(res)
 }
 
 fn lex_closure<T>(iter: &mut T, is_closure: bool) -> Result<Vec<Tolken>>
@@ -117,8 +126,8 @@ mod tests {
 
     #[test]
     fn closure_tolkens() {
-        let src = "[]".to_string();
-        let expected = vec![Tolken::Closure(vec![])];
+        let src = "[.]".to_string();
+        let expected = vec![Tolken::Closure(vec![Tolken::Print])];
         assert_eq!(lex(src), Ok(expected));
     }
 
@@ -151,8 +160,21 @@ mod tests {
         let expected = vec![Tolken::Input, Tolken::Input];
         assert_eq!(lex(src), Ok(expected));
 
-        let src = "[][]".to_string();
-        let expected = vec![Tolken::Closure(vec![]), Tolken::Closure(vec![])];
+        let src = "[.][.]".to_string();
+        let expected = vec![
+            Tolken::Closure(vec![Tolken::Print]),
+            Tolken::Closure(vec![Tolken::Print]),
+        ];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn ignore_empty_closures() {
+        let src = "[+][][][][-]".to_string();
+        let expected = vec![
+            Tolken::Closure(vec![Tolken::Increment(1)]),
+            Tolken::Closure(vec![Tolken::Decrement(1)]),
+        ];
         assert_eq!(lex(src), Ok(expected));
     }
 
@@ -162,12 +184,18 @@ mod tests {
         let expected = vec![Tolken::Closure(vec![Tolken::Increment(1)])];
         assert_eq!(lex(src), Ok(expected));
 
-        let src = "+[]".to_string();
-        let expected = vec![Tolken::Increment(1), Tolken::Closure(vec![])];
+        let src = "+[+]".to_string();
+        let expected = vec![
+            Tolken::Increment(1),
+            Tolken::Closure(vec![Tolken::Increment(1)]),
+        ];
         assert_eq!(lex(src), Ok(expected));
 
-        let src = "[]+".to_string();
-        let expected = vec![Tolken::Closure(vec![]), Tolken::Increment(1)];
+        let src = "[+]+".to_string();
+        let expected = vec![
+            Tolken::Closure(vec![Tolken::Increment(1)]),
+            Tolken::Increment(1),
+        ];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "+[+]+".to_string();
@@ -190,11 +218,7 @@ mod tests {
     #[test]
     fn comments() {
         let src = "[ This is a comment ]+Inside of the- code".to_string();
-        let expected = vec![
-            Tolken::Closure(vec![]),
-            Tolken::Increment(1),
-            Tolken::Decrement(1),
-        ];
+        let expected = vec![Tolken::Increment(1), Tolken::Decrement(1)];
         assert_eq!(lex(src), Ok(expected));
     }
 }
