@@ -26,10 +26,10 @@ fn interpret_block(
 ) -> Result<(), BrainfuckError> {
     for op in block {
         match op {
-            Tolken::Increment => memory[*ptr] = memory[*ptr].wrapping_add(1),
-            Tolken::Decrement => memory[*ptr] = memory[*ptr].wrapping_sub(1),
-            Tolken::Next => *ptr = ptr.wrapping_add(1) % memory.len(),
-            Tolken::Prev => *ptr = ptr.wrapping_sub(1) % memory.len(),
+            Tolken::Increment(x) => memory[*ptr] = memory[*ptr].wrapping_add(*x),
+            Tolken::Decrement(x) => memory[*ptr] = memory[*ptr].wrapping_sub(*x),
+            Tolken::Next(count) => *ptr = ptr.wrapping_add(*count) % memory.len(),
+            Tolken::Prev(count) => *ptr = ptr.wrapping_sub(*count) % memory.len(),
             Tolken::Print => print!("{}", memory[*ptr] as char),
             Tolken::Input => {
                 memory[*ptr] =
