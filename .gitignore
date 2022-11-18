@@ -1,1 +1,12 @@
+# Rust files
 /target
+
+# VS Code
+.vscode
+
+# Brainfuck test programs
+*.b
+*.bf
+
+# Debugging files
+perf.svg
