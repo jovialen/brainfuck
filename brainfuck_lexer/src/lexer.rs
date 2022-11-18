@@ -44,7 +44,9 @@ where
             LOOP_BEGIN => Tolken::Closure(lex_closure(iter, true)?),
             LOOP_END if is_closure => return Ok(block),
             LOOP_END => Err(LexerError::SyntaxError(ch))?,
+            #[cfg(feature = "comments")]
             _ => continue,
+            #[cfg(not(feature = "comments"))]
             _ => Err(LexerError::SyntaxError(ch))?,
         };
 
