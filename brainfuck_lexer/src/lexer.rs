@@ -1,7 +1,7 @@
 use crate::error::{LexerError, Result};
 use itertools::Itertools;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Tolken {
     Increment(u8),
     Decrement(u8),
@@ -27,6 +27,7 @@ pub fn lex(src: String) -> Result<Block> {
     let mut slice = src
         .chars()
         .into_iter()
+        .filter(|ch| !ch.is_whitespace())
         .map(|c| (c, 1))
         .coalesce(|(c, n), (d, m)| {
             if c == d
@@ -74,5 +75,126 @@ where
         Err(LexerError::UnclosedBlock)
     } else {
         Ok(block)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn value_tolkens() {
+        let src = "+".to_string();
+        let expected = vec![Tolken::Increment(1)];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "-".to_string();
+        let expected = vec![Tolken::Decrement(1)];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn move_tolkens() {
+        let src = ">".to_string();
+        let expected = vec![Tolken::Next(1)];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "<".to_string();
+        let expected = vec![Tolken::Prev(1)];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn io_tolkens() {
+        let src = ".".to_string();
+        let expected = vec![Tolken::Print];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = ",".to_string();
+        let expected = vec![Tolken::Input];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn closure_tolkens() {
+        let src = "[]".to_string();
+        let expected = vec![Tolken::Closure(vec![])];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn repeatable_tolkens() {
+        let src = "+++".to_string();
+        let expected = vec![Tolken::Increment(3)];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "-----".to_string();
+        let expected = vec![Tolken::Decrement(5)];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = ">>".to_string();
+        let expected = vec![Tolken::Next(2)];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "<<<<<<".to_string();
+        let expected = vec![Tolken::Prev(6)];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn non_repeatable_tolkens() {
+        let src = "...".to_string();
+        let expected = vec![Tolken::Print, Tolken::Print, Tolken::Print];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = ",,".to_string();
+        let expected = vec![Tolken::Input, Tolken::Input];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "[][]".to_string();
+        let expected = vec![Tolken::Closure(vec![]), Tolken::Closure(vec![])];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn closure_tolken_capture() {
+        let src = "[+]".to_string();
+        let expected = vec![Tolken::Closure(vec![Tolken::Increment(1)])];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "+[]".to_string();
+        let expected = vec![Tolken::Increment(1), Tolken::Closure(vec![])];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "[]+".to_string();
+        let expected = vec![Tolken::Closure(vec![]), Tolken::Increment(1)];
+        assert_eq!(lex(src), Ok(expected));
+
+        let src = "+[+]+".to_string();
+        let expected = vec![
+            Tolken::Increment(1),
+            Tolken::Closure(vec![Tolken::Increment(1)]),
+            Tolken::Increment(1),
+        ];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[test]
+    fn whitespace() {
+        let src = "+ +\n\n\n - -    ".to_string();
+        let expected = vec![Tolken::Increment(2), Tolken::Decrement(2)];
+        assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[cfg(feature = "comments")]
+    #[test]
+    fn comments() {
+        let src = "[ This is a comment ]+Inside of the- code".to_string();
+        let expected = vec![
+            Tolken::Closure(vec![]),
+            Tolken::Increment(1),
+            Tolken::Decrement(1),
+        ];
+        assert_eq!(lex(src), Ok(expected));
     }
 }
