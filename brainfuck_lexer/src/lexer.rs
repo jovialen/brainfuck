@@ -46,7 +46,7 @@ pub fn lex(src: String) -> Result<Block> {
             }
         });
 
-    let res = tokenize_closure(&mut slice, false)?
+    let res = tokenize_block(&mut slice, false)?
         .into_iter()
         .filter(|v| match v {
             // Filter out empty closures
@@ -58,7 +58,7 @@ pub fn lex(src: String) -> Result<Block> {
     Ok(res)
 }
 
-fn tokenize_closure<T>(iter: &mut T, is_closure: bool) -> Result<Vec<Token>>
+fn tokenize_block<T>(iter: &mut T, is_closure: bool) -> Result<Block>
 where
     T: Iterator<Item = (char, u32)>,
 {
@@ -72,7 +72,7 @@ where
             TOKEN_PREV => Token::Prev(count as usize),
             TOKEN_PRINT => Token::Print,
             TOKEN_INPUT => Token::Input,
-            TOKEN_LOOP_BEGIN => Token::Closure(tokenize_closure(iter, true)?),
+            TOKEN_LOOP_BEGIN => Token::Closure(tokenize_block(iter, true)?),
             TOKEN_LOOP_END if is_closure => return Ok(block),
             TOKEN_LOOP_END => Err(LexerError::SyntaxError(ch))?,
             #[cfg(feature = "debug_token")]
