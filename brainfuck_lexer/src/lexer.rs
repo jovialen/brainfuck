@@ -214,6 +214,15 @@ mod tests {
     }
 
     #[test]
+    fn closure_errors() {
+        let src = "[][".to_string();
+        assert_eq!(lex(src), Err(LexerError::UnclosedBlock));
+
+        let src = "[]]".to_string();
+        assert_eq!(lex(src), Err(LexerError::SyntaxError(']')));
+    }
+
+    #[test]
     fn whitespace() {
         let src = "+ +\n\n\n - -    ".to_string();
         let expected = vec![Token::Increment(2), Token::Decrement(2)];
