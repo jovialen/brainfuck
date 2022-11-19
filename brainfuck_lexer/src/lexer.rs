@@ -227,4 +227,12 @@ mod tests {
         let expected = vec![Token::Increment(1), Token::Decrement(1)];
         assert_eq!(lex(src), Ok(expected));
     }
+
+    #[cfg(feature = "debug_token")]
+    #[test]
+    fn debug_token() {
+        let src = "#".to_string();
+        let expected = vec![Token::Debug];
+        assert_eq!(lex(src), Ok(expected));
+    }
 }
