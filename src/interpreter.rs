@@ -1,5 +1,5 @@
 use crate::error::BrainfuckError;
-use brainfuck_lexer::{Block, Tolken};
+use brainfuck_lexer::{Block, Token};
 use std::io::Read;
 
 const HEAP_SIZE: usize = 30_000;
@@ -26,22 +26,22 @@ fn interpret_block(
 ) -> Result<(), BrainfuckError> {
     for op in block {
         match op {
-            Tolken::Increment(x) => memory[*ptr] = memory[*ptr].wrapping_add(*x),
-            Tolken::Decrement(x) => memory[*ptr] = memory[*ptr].wrapping_sub(*x),
-            Tolken::Next(count) => *ptr = ptr.wrapping_add(*count) % memory.len(),
-            Tolken::Prev(count) => *ptr = ptr.wrapping_sub(*count) % memory.len(),
-            Tolken::Print => print!("{}", memory[*ptr] as char),
-            Tolken::Input => {
+            Token::Increment(x) => memory[*ptr] = memory[*ptr].wrapping_add(*x),
+            Token::Decrement(x) => memory[*ptr] = memory[*ptr].wrapping_sub(*x),
+            Token::Next(count) => *ptr = ptr.wrapping_add(*count) % memory.len(),
+            Token::Prev(count) => *ptr = ptr.wrapping_sub(*count) % memory.len(),
+            Token::Print => print!("{}", memory[*ptr] as char),
+            Token::Input => {
                 memory[*ptr] =
                     get_u8_from_stdin().map_or_else(|| Err(BrainfuckError::ReadError), |v| Ok(v))?
             }
-            Tolken::Closure(block) => {
+            Token::Closure(block) => {
                 while memory[*ptr] != 0 {
                     interpret_block(block, memory, ptr)?;
                 }
             }
-            #[cfg(feature = "debug_tolken")]
-            Tolken::Debug => println!(
+            #[cfg(feature = "debug_token")]
+            Token::Debug => println!(
                 "{:?}",
                 memory
                     .iter()

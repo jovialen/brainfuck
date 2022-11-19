@@ -14,7 +14,7 @@ brainfuck_lexer = { path = "./brainfuck_lexer" }
 [features]
 default = [ "comments" ]
 comments = [ "brainfuck_lexer/comments" ]
-debug_tolken = [ "brainfuck_lexer/debug_tolken" ]
+debug_token = [ "brainfuck_lexer/debug_token" ]
 
 [workspace]
 members = [

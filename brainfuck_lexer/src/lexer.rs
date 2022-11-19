@@ -2,7 +2,7 @@ use crate::error::{LexerError, Result};
 use itertools::Itertools;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Tolken {
+pub enum Token {
     Increment(u8),
     Decrement(u8),
     Next(usize),
@@ -10,22 +10,22 @@ pub enum Tolken {
     Print,
     Input,
     Closure(Block),
-    #[cfg(feature = "debug_tolken")]
+    #[cfg(feature = "debug_token")]
     Debug,
 }
 
-pub type Block = Vec<Tolken>;
+pub type Block = Vec<Token>;
 
-const TOLKEN_INCREMENT: char = '+';
-const TOLKEN_DECREMENT: char = '-';
-const TOLKEN_NEXT: char = '>';
-const TOLKEN_PREV: char = '<';
-const TOLKEN_PRINT: char = '.';
-const TOLKEN_INPUT: char = ',';
-const TOLKEN_LOOP_BEGIN: char = '[';
-const TOLKEN_LOOP_END: char = ']';
-#[cfg(feature = "debug_tolken")]
-const TOLKEN_DEBUG: char = '#';
+const TOKEN_INCREMENT: char = '+';
+const TOKEN_DECREMENT: char = '-';
+const TOKEN_NEXT: char = '>';
+const TOKEN_PREV: char = '<';
+const TOKEN_PRINT: char = '.';
+const TOKEN_INPUT: char = ',';
+const TOKEN_LOOP_BEGIN: char = '[';
+const TOKEN_LOOP_END: char = ']';
+#[cfg(feature = "debug_token")]
+const TOKEN_DEBUG: char = '#';
 
 pub fn lex(src: String) -> Result<Block> {
     let mut slice = src
@@ -35,10 +35,10 @@ pub fn lex(src: String) -> Result<Block> {
         .map(|c| (c, 1))
         .coalesce(|(c, n), (d, m)| {
             if c == d
-                && (c == TOLKEN_INCREMENT
-                    || c == TOLKEN_DECREMENT
-                    || c == TOLKEN_NEXT
-                    || c == TOLKEN_PREV)
+                && (c == TOKEN_INCREMENT
+                    || c == TOKEN_DECREMENT
+                    || c == TOKEN_NEXT
+                    || c == TOKEN_PREV)
             {
                 Ok((c, n + m))
             } else {
@@ -46,11 +46,11 @@ pub fn lex(src: String) -> Result<Block> {
             }
         });
 
-    let res = lex_closure(&mut slice, false)?
+    let res = tokenize_closure(&mut slice, false)?
         .into_iter()
         .filter(|v| match v {
             // Filter out empty closures
-            Tolken::Closure(block) => !block.is_empty(),
+            Token::Closure(block) => !block.is_empty(),
             _ => true,
         })
         .collect();
@@ -58,7 +58,7 @@ pub fn lex(src: String) -> Result<Block> {
     Ok(res)
 }
 
-fn lex_closure<T>(iter: &mut T, is_closure: bool) -> Result<Vec<Tolken>>
+fn tokenize_closure<T>(iter: &mut T, is_closure: bool) -> Result<Vec<Token>>
 where
     T: Iterator<Item = (char, u32)>,
 {
@@ -66,17 +66,17 @@ where
 
     while let Some((ch, count)) = iter.next() {
         let op = match ch {
-            TOLKEN_INCREMENT => Tolken::Increment(count as u8),
-            TOLKEN_DECREMENT => Tolken::Decrement(count as u8),
-            TOLKEN_NEXT => Tolken::Next(count as usize),
-            TOLKEN_PREV => Tolken::Prev(count as usize),
-            TOLKEN_PRINT => Tolken::Print,
-            TOLKEN_INPUT => Tolken::Input,
-            TOLKEN_LOOP_BEGIN => Tolken::Closure(lex_closure(iter, true)?),
-            TOLKEN_LOOP_END if is_closure => return Ok(block),
-            TOLKEN_LOOP_END => Err(LexerError::SyntaxError(ch))?,
-            #[cfg(feature = "debug_tolken")]
-            TOLKEN_DEBUG => Tolken::Debug,
+            TOKEN_INCREMENT => Token::Increment(count as u8),
+            TOKEN_DECREMENT => Token::Decrement(count as u8),
+            TOKEN_NEXT => Token::Next(count as usize),
+            TOKEN_PREV => Token::Prev(count as usize),
+            TOKEN_PRINT => Token::Print,
+            TOKEN_INPUT => Token::Input,
+            TOKEN_LOOP_BEGIN => Token::Closure(tokenize_closure(iter, true)?),
+            TOKEN_LOOP_END if is_closure => return Ok(block),
+            TOKEN_LOOP_END => Err(LexerError::SyntaxError(ch))?,
+            #[cfg(feature = "debug_token")]
+            TOKEN_DEBUG => Token::Debug,
             #[cfg(feature = "comments")]
             _ => continue,
             #[cfg(not(feature = "comments"))]
@@ -98,78 +98,78 @@ mod tests {
     use super::*;
 
     #[test]
-    fn value_tolkens() {
+    fn value_tokens() {
         let src = "+".to_string();
-        let expected = vec![Tolken::Increment(1)];
+        let expected = vec![Token::Increment(1)];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "-".to_string();
-        let expected = vec![Tolken::Decrement(1)];
+        let expected = vec![Token::Decrement(1)];
         assert_eq!(lex(src), Ok(expected));
     }
 
     #[test]
-    fn move_tolkens() {
+    fn move_tokens() {
         let src = ">".to_string();
-        let expected = vec![Tolken::Next(1)];
+        let expected = vec![Token::Next(1)];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "<".to_string();
-        let expected = vec![Tolken::Prev(1)];
+        let expected = vec![Token::Prev(1)];
         assert_eq!(lex(src), Ok(expected));
     }
 
     #[test]
-    fn io_tolkens() {
+    fn io_tokens() {
         let src = ".".to_string();
-        let expected = vec![Tolken::Print];
+        let expected = vec![Token::Print];
         assert_eq!(lex(src), Ok(expected));
 
         let src = ",".to_string();
-        let expected = vec![Tolken::Input];
+        let expected = vec![Token::Input];
         assert_eq!(lex(src), Ok(expected));
     }
 
     #[test]
-    fn closure_tolkens() {
+    fn closure_tokens() {
         let src = "[.]".to_string();
-        let expected = vec![Tolken::Closure(vec![Tolken::Print])];
+        let expected = vec![Token::Closure(vec![Token::Print])];
         assert_eq!(lex(src), Ok(expected));
     }
 
     #[test]
-    fn repeatable_tolkens() {
+    fn repeatable_tokens() {
         let src = "+++".to_string();
-        let expected = vec![Tolken::Increment(3)];
+        let expected = vec![Token::Increment(3)];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "-----".to_string();
-        let expected = vec![Tolken::Decrement(5)];
+        let expected = vec![Token::Decrement(5)];
         assert_eq!(lex(src), Ok(expected));
 
         let src = ">>".to_string();
-        let expected = vec![Tolken::Next(2)];
+        let expected = vec![Token::Next(2)];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "<<<<<<".to_string();
-        let expected = vec![Tolken::Prev(6)];
+        let expected = vec![Token::Prev(6)];
         assert_eq!(lex(src), Ok(expected));
     }
 
     #[test]
-    fn non_repeatable_tolkens() {
+    fn non_repeatable_tokens() {
         let src = "...".to_string();
-        let expected = vec![Tolken::Print, Tolken::Print, Tolken::Print];
+        let expected = vec![Token::Print, Token::Print, Token::Print];
         assert_eq!(lex(src), Ok(expected));
 
         let src = ",,".to_string();
-        let expected = vec![Tolken::Input, Tolken::Input];
+        let expected = vec![Token::Input, Token::Input];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "[.][.]".to_string();
         let expected = vec![
-            Tolken::Closure(vec![Tolken::Print]),
-            Tolken::Closure(vec![Tolken::Print]),
+            Token::Closure(vec![Token::Print]),
+            Token::Closure(vec![Token::Print]),
         ];
         assert_eq!(lex(src), Ok(expected));
     }
@@ -178,37 +178,37 @@ mod tests {
     fn ignore_empty_closures() {
         let src = "[+][][][][-]".to_string();
         let expected = vec![
-            Tolken::Closure(vec![Tolken::Increment(1)]),
-            Tolken::Closure(vec![Tolken::Decrement(1)]),
+            Token::Closure(vec![Token::Increment(1)]),
+            Token::Closure(vec![Token::Decrement(1)]),
         ];
         assert_eq!(lex(src), Ok(expected));
     }
 
     #[test]
-    fn closure_tolken_capture() {
+    fn closure_token_capture() {
         let src = "[+]".to_string();
-        let expected = vec![Tolken::Closure(vec![Tolken::Increment(1)])];
+        let expected = vec![Token::Closure(vec![Token::Increment(1)])];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "+[+]".to_string();
         let expected = vec![
-            Tolken::Increment(1),
-            Tolken::Closure(vec![Tolken::Increment(1)]),
+            Token::Increment(1),
+            Token::Closure(vec![Token::Increment(1)]),
         ];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "[+]+".to_string();
         let expected = vec![
-            Tolken::Closure(vec![Tolken::Increment(1)]),
-            Tolken::Increment(1),
+            Token::Closure(vec![Token::Increment(1)]),
+            Token::Increment(1),
         ];
         assert_eq!(lex(src), Ok(expected));
 
         let src = "+[+]+".to_string();
         let expected = vec![
-            Tolken::Increment(1),
-            Tolken::Closure(vec![Tolken::Increment(1)]),
-            Tolken::Increment(1),
+            Token::Increment(1),
+            Token::Closure(vec![Token::Increment(1)]),
+            Token::Increment(1),
         ];
         assert_eq!(lex(src), Ok(expected));
     }
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn whitespace() {
         let src = "+ +\n\n\n - -    ".to_string();
-        let expected = vec![Tolken::Increment(2), Tolken::Decrement(2)];
+        let expected = vec![Token::Increment(2), Token::Decrement(2)];
         assert_eq!(lex(src), Ok(expected));
     }
 
@@ -224,7 +224,7 @@ mod tests {
     #[test]
     fn comments() {
         let src = "[ This is a comment ]+Inside of the- code".to_string();
-        let expected = vec![Tolken::Increment(1), Tolken::Decrement(1)];
+        let expected = vec![Token::Increment(1), Token::Decrement(1)];
         assert_eq!(lex(src), Ok(expected));
     }
 }

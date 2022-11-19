@@ -1,4 +1,4 @@
 pub mod error;
 pub mod lexer;
 
-pub use lexer::{lex, Block, Tolken};
+pub use lexer::{lex, Block, Token};
