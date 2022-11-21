@@ -203,10 +203,10 @@ mod tests {
 
     #[test]
     fn ignore_empty_closures() {
-        let src = "[+][][][][-]".to_string();
+        let src = "[+][][][][+]".to_string();
         let expected = vec![
             Token::Closure(vec![Token::Increment(1)]),
-            Token::Closure(vec![Token::Decrement(1)]),
+            Token::Closure(vec![Token::Increment(1)]),
         ];
         assert_eq!(lex(src), Ok(expected));
     }
@@ -270,5 +270,53 @@ mod tests {
         let src = "#".to_string();
         let expected = vec![Token::Debug];
         assert_eq!(lex(src), Ok(expected));
+    }
+
+    #[cfg(feature = "precompiled_patterns")]
+    mod precompiled_patterns {
+        use super::*;
+
+        #[test]
+        fn set_to_zero_pattern() {
+            let src = "[-]".to_string();
+            let expected = vec![Token::Pattern(PreCompiledPattern::SetToZero)];
+            assert_eq!(lex(src), Ok(expected));
+        }
+
+        #[test]
+        fn multiply_pattern() {
+            let src = "[->+<]".to_string();
+            let expected = vec![Token::Pattern(PreCompiledPattern::Multiply {
+                dest_offset: 1,
+                factor: 1,
+            })];
+            assert_eq!(lex(src), Ok(expected));
+
+            let src = "[->>>+<<<]".to_string();
+            let expected = vec![Token::Pattern(PreCompiledPattern::Multiply {
+                dest_offset: 3,
+                factor: 1,
+            })];
+            assert_eq!(lex(src), Ok(expected));
+
+            let src = "[->++++<]".to_string();
+            let expected = vec![Token::Pattern(PreCompiledPattern::Multiply {
+                dest_offset: 1,
+                factor: 4,
+            })];
+            assert_eq!(lex(src), Ok(expected));
+        }
+
+        #[test]
+        fn uneven_offsets() {
+            let src = "[->>+<]".to_string();
+            let expected = vec![Token::Closure(vec![
+                Token::Decrement(1),
+                Token::Next(2),
+                Token::Increment(1),
+                Token::Prev(1),
+            ])];
+            assert_eq!(lex(src), Ok(expected));
+        }
     }
 }
