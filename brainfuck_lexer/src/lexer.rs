@@ -20,6 +20,7 @@ pub enum Token {
 #[derive(Debug, Clone, PartialEq)]
 pub enum PreCompiledPattern {
     SetToZero,
+    Multiply { dest_offset: isize, factor: u8 },
 }
 
 pub type Block = Vec<Token>;
@@ -108,13 +109,12 @@ fn optimize_block(block: &Block) -> Block {
         })
         .map(|token| match token {
             #[cfg(feature = "precompiled_patterns")]
-            Token::Closure(block) => {
-                if block == vec![Token::Decrement(1)] {
-                    Token::Pattern(PreCompiledPattern::SetToZero)
-                } else {
-                    Token::Closure(block)
-                }
-            }
+            Token::Closure(block) => match &block[..] {
+                &[Token::Decrement(1)] => Token::Pattern(PreCompiledPattern::SetToZero),
+                &[Token::Decrement(1), Token::Next(offset), Token::Increment(factor), Token::Prev(rev_offset)] if offset == rev_offset => Token::Pattern(PreCompiledPattern::Multiply { dest_offset: offset as isize, factor: factor }),
+                &[Token::Decrement(1), Token::Prev(offset), Token::Increment(factor), Token::Next(rev_offset)] if offset == rev_offset => Token::Pattern(PreCompiledPattern::Multiply { dest_offset: -(offset as isize), factor: factor }),
+                _ => Token::Closure(block),
+            },
             _ => token,
         })
         .collect()

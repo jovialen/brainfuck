@@ -63,7 +63,22 @@ fn interpret_block(
                     .collect::<Vec<_>>()
             ),
             #[cfg(feature = "precompiled_patterns")]
-            Token::Pattern(PreCompiledPattern::SetToZero) => memory[*ptr] = 0,
+            Token::Pattern(pattern) => match *pattern {
+                PreCompiledPattern::SetToZero => memory[*ptr] = 0,
+                PreCompiledPattern::Multiply {
+                    dest_offset,
+                    factor,
+                } => {
+                    let dest = if dest_offset > 0 {
+                        ptr.wrapping_add(dest_offset as usize)
+                    } else {
+                        ptr.wrapping_sub(dest_offset.abs() as usize)
+                    } % HEAP_SIZE;
+
+                    memory[dest] = memory[*ptr].wrapping_mul(factor);
+                    memory[*ptr] = 0;
+                }
+            },
         }
     }
 
