@@ -44,7 +44,7 @@ fn interpret_block(
             }
             #[cfg(feature = "debug_token")]
             Token::Debug => println!(
-                "{:?}",
+                "\n{:?}",
                 memory
                     .iter()
                     .scan(0, |state, &cell| {
