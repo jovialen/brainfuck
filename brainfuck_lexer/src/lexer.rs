@@ -57,7 +57,6 @@ pub fn lex(src: String) -> Result<Block> {
 
     let res = optimize_block(&tokenize_block(&mut slice, false)?);
 
-    println!("{:?}", res);
     Ok(res)
 }
 
