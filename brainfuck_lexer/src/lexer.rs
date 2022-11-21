@@ -12,6 +12,14 @@ pub enum Token {
     Closure(Block),
     #[cfg(feature = "debug_token")]
     Debug,
+    #[cfg(feature = "precompiled_patterns")]
+    Pattern(PreCompiledPattern),
+}
+
+#[cfg(feature = "precompiled_patterns")]
+#[derive(Debug, Clone, PartialEq)]
+pub enum PreCompiledPattern {
+    SetToZero,
 }
 
 pub type Block = Vec<Token>;
@@ -48,6 +56,7 @@ pub fn lex(src: String) -> Result<Block> {
 
     let res = optimize_block(&tokenize_block(&mut slice, false)?);
 
+    println!("{:?}", res);
     Ok(res)
 }
 
@@ -96,6 +105,17 @@ fn optimize_block(block: &Block) -> Block {
         .filter(|token| match token {
             Token::Closure(block) => !block.is_empty(),
             _ => true,
+        })
+        .map(|token| match token {
+            #[cfg(feature = "precompiled_patterns")]
+            Token::Closure(block) => {
+                if block == vec![Token::Decrement(1)] {
+                    Token::Pattern(PreCompiledPattern::SetToZero)
+                } else {
+                    Token::Closure(block)
+                }
+            }
+            _ => token,
         })
         .collect()
 }

@@ -1,4 +1,6 @@
 use crate::error::BrainfuckError;
+#[cfg(feature = "precompiled_patterns")]
+use brainfuck_lexer::lexer::PreCompiledPattern;
 use brainfuck_lexer::{Block, Token};
 use std::io::Read;
 
@@ -60,6 +62,8 @@ fn interpret_block(
                     })
                     .collect::<Vec<_>>()
             ),
+            #[cfg(feature = "precompiled_patterns")]
+            Token::Pattern(PreCompiledPattern::SetToZero) => memory[*ptr] = 0,
         }
     }
 
