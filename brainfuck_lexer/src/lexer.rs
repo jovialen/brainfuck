@@ -46,14 +46,7 @@ pub fn lex(src: String) -> Result<Block> {
             }
         });
 
-    let res = tokenize_block(&mut slice, false)?
-        .into_iter()
-        .filter(|v| match v {
-            // Filter out empty closures
-            Token::Closure(block) => !block.is_empty(),
-            _ => true,
-        })
-        .collect();
+    let res = optimize_block(&tokenize_block(&mut slice, false)?);
 
     Ok(res)
 }
@@ -91,6 +84,20 @@ where
     } else {
         Ok(block)
     }
+}
+
+fn optimize_block(block: &Block) -> Block {
+    block
+        .into_iter()
+        .map(|token| match token {
+            Token::Closure(block) => Token::Closure(optimize_block(block)),
+            _ => token.clone(),
+        })
+        .filter(|token| match token {
+            Token::Closure(block) => !block.is_empty(),
+            _ => true,
+        })
+        .collect()
 }
 
 #[cfg(test)]
