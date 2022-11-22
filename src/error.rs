@@ -4,7 +4,6 @@ use brainfuck_lexer::error::LexerError;
 pub enum BrainfuckError {
     IOError(std::io::Error),
     ParserError(LexerError),
-    ReadError,
 }
 
 impl From<std::io::Error> for BrainfuckError {

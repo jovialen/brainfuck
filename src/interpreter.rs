@@ -6,27 +6,39 @@ use std::io::Read;
 
 const HEAP_SIZE: usize = 30_000;
 
-pub fn brainfuck(src: Block, out: &mut dyn std::io::Write) -> Result<(), BrainfuckError> {
+pub fn brainfuck(src: &Block) -> Result<(), BrainfuckError> {
+    interpret(src, &mut std::io::stdin(), &mut std::io::stdout())
+}
+
+pub fn interpret<I, O>(src: &Block, input: &mut I, out: &mut O) -> Result<(), BrainfuckError>
+where
+    I: std::io::Read,
+    O: std::io::Write,
+{
     let mut memory = [0u8; HEAP_SIZE];
     let mut ptr = 0;
 
-    interpret_block(&src, &mut memory, &mut ptr, out)
+    interpret_block(src, &mut memory, &mut ptr, input, out)
 }
 
-fn get_u8_from_stdin() -> Option<u8> {
-    std::io::stdin()
-        .bytes()
-        .next()
-        .and_then(|result| result.ok())
-        .map(|byte| byte as u8)
+fn read_u8<I>(input: &mut I) -> std::io::Result<u8>
+where
+    I: std::io::Read,
+{
+    input.bytes().next().unwrap_or(Ok(0))
 }
 
-fn interpret_block(
+fn interpret_block<I, O>(
     block: &Block,
     memory: &mut [u8],
     ptr: &mut usize,
-    out: &mut dyn std::io::Write,
-) -> Result<(), BrainfuckError> {
+    input: &mut I,
+    out: &mut O,
+) -> Result<(), BrainfuckError>
+where
+    I: std::io::Read,
+    O: std::io::Write,
+{
     for op in block {
         match op {
             Token::Increment(x) => memory[*ptr] = memory[*ptr].wrapping_add(*x),
@@ -34,13 +46,10 @@ fn interpret_block(
             Token::Next(count) => *ptr = ptr.wrapping_add(*count) % memory.len(),
             Token::Prev(count) => *ptr = ptr.wrapping_sub(*count) % memory.len(),
             Token::Print => write!(out, "{}", memory[*ptr] as char)?,
-            Token::Input => {
-                memory[*ptr] =
-                    get_u8_from_stdin().map_or_else(|| Err(BrainfuckError::ReadError), |v| Ok(v))?
-            }
+            Token::Input => memory[*ptr] = read_u8(input)?,
             Token::Closure(block) => {
                 while memory[*ptr] != 0 {
-                    interpret_block(block, memory, ptr, out)?;
+                    interpret_block(block, memory, ptr, input, out)?;
                 }
             }
             #[cfg(feature = "debug_token")]
