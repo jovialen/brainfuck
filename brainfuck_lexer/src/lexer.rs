@@ -1,28 +1,49 @@
+//! Lexical analysis
+
 use crate::error::{LexerError, Result};
 use itertools::Itertools;
 
+/// Recognized Brainfuck tokens.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
+    /// Increment the value at the current memory location.
     Increment(u8),
+    /// Decrement the value at the current memory location.
     Decrement(u8),
+    /// Go to the next byte in memory.
     Next(usize),
+    /// Go to the previous byte in memory.
     Prev(usize),
+    /// Print the value at the current memory location as a [`char`].
     Print,
+    /// Set the value at the current memory location from the standard input.
     Input,
+    /// Repeat the block while the current memory location is not zero.
     Closure(Block),
     #[cfg(feature = "debug_token")]
+    /// Print the content of the memory as u8.
     Debug,
     #[cfg(feature = "precompiled_patterns")]
+    /// A block with a known pre-compiled result.
     Pattern(PreCompiledPattern),
 }
 
 #[cfg(feature = "precompiled_patterns")]
+/// Pre-compiled patterns of Brainfuck code.
 #[derive(Debug, Clone, PartialEq)]
 pub enum PreCompiledPattern {
+    /// Set the current memory location to zero.
     SetToZero,
-    Multiply { dest_offset: isize, factor: u8 },
+    /// Set the destination byte to the current byte multiplied by a constant.
+    Multiply {
+        /// The offset from the current byte to store the result.
+        dest_offset: isize,
+        /// The constant to multiply the source byte with.
+        factor: u8,
+    },
 }
 
+/// Vector of [`Token`]s making up a single block of code.
 pub type Block = Vec<Token>;
 
 const TOKEN_INCREMENT: char = '+';
@@ -36,6 +57,27 @@ const TOKEN_LOOP_END: char = ']';
 #[cfg(feature = "debug_token")]
 const TOKEN_DEBUG: char = '#';
 
+/// Parse Brainfuck program.
+///
+/// This function takes in a source string as an argument and parses it to a
+/// block of [`Token`]s, and then optimizes it as much as possible.
+///
+/// # Arguments
+///
+/// * `src` - The Brainfuck source to parse.
+///
+/// # Errors
+///
+/// If the given source cannot be lexed, a [`LexerError`] will be returned.
+///
+/// # Examples
+///
+/// ```
+/// use brainfuck_lexer::lexer::lex;
+///
+/// let src = "++++++++[->++++++++<].".to_string();
+/// let code = lex(src);
+/// ```
 pub fn lex(src: String) -> Result<Block> {
     let mut slice = src
         .chars()
@@ -60,6 +102,7 @@ pub fn lex(src: String) -> Result<Block> {
     Ok(res)
 }
 
+/// Tokenize iterator to Brainfuck block.
 fn tokenize_block<T>(iter: &mut T, is_closure: bool) -> Result<Block>
 where
     T: Iterator<Item = (char, u32)>,
