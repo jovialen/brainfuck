@@ -1,3 +1,5 @@
+//! Brainfuck interpreter.
+
 use crate::error::BrainfuckError;
 #[cfg(feature = "precompiled_patterns")]
 use brainfuck_lexer::lexer::PreCompiledPattern;
@@ -6,10 +8,53 @@ use std::io::Read;
 
 const HEAP_SIZE: usize = 30_000;
 
+/// Interpret Brainfuck program with [`std::io::Stdin`] and [`std::io::Stdout`].
+///
+/// # Arguments
+///
+/// * `src` - The [`Block`] to interpret.
+///
+/// # Examples
+///
+/// ```
+/// use brainfuck_lexer::lex;
+/// use brainfuck_interpreter::interpreter::brainfuck;
+///
+/// let src = ",[.,]".to_string(); // Repeat input
+/// brainfuck(&lex(src).unwrap());
+/// ```
 pub fn brainfuck(src: &Block) -> Result<(), BrainfuckError> {
     interpret(src, &mut std::io::stdin(), &mut std::io::stdout())
 }
 
+/// Interpret Brainfuck program.
+///
+/// # Arguments
+///
+/// * `src` - The [`Block`] to interpret.
+/// * `input` - The input stream.
+/// * `out` - The output stream.
+///
+/// # Examples
+///
+/// ```
+/// use brainfuck_lexer::lex;
+/// use brainfuck_interpreter::interpreter::interpret;
+/// use std::io::Cursor;
+///
+/// let src = ",.".to_string();
+/// let mut input = Cursor::new(vec![b'a']);
+/// let mut output = Vec::new();
+/// interpret(&lex(src).unwrap(), &mut input, &mut output);
+///
+/// assert_eq!(output[0], b'a');
+/// ```
+///
+/// # Errors
+///
+/// If the interpreter fails to either read from the input or write to the
+/// output, this function will return a [`BrainfuckError::IOError`] with the
+/// corresponding [`std::io::Error`].
 pub fn interpret<I, O>(src: &Block, input: &mut I, out: &mut O) -> Result<(), BrainfuckError>
 where
     I: std::io::Read,
