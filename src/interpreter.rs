@@ -23,7 +23,7 @@ fn get_u8_from_stdin() -> Option<u8> {
 
 fn interpret_block(
     block: &Block,
-    memory: &mut [u8; HEAP_SIZE],
+    memory: &mut [u8],
     ptr: &mut usize,
     out: &mut dyn std::io::Write,
 ) -> Result<(), BrainfuckError> {
@@ -75,7 +75,7 @@ fn interpret_block(
                         ptr.wrapping_add(dest_offset as usize)
                     } else {
                         ptr.wrapping_sub(dest_offset.abs() as usize)
-                    } % HEAP_SIZE;
+                    } % memory.len();
 
                     memory[dest] = memory[*ptr].wrapping_mul(factor);
                     memory[*ptr] = 0;
