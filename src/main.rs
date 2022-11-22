@@ -2,6 +2,8 @@ mod cli;
 mod error;
 mod interpreter;
 
+use std::io::stdout;
+
 use brainfuck_lexer::lex;
 use clap::Parser;
 use error::BrainfuckError;
@@ -21,5 +23,5 @@ fn main() -> Result<(), BrainfuckError> {
     let args = cli::Args::parse();
     let src = get_source_as_str(args.src)?;
     let code = lex(src)?;
-    brainfuck(code)
+    brainfuck(code, &mut stdout())
 }
