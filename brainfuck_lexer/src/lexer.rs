@@ -155,6 +155,8 @@ fn optimize_block(block: &Block) -> Block {
                 &[Token::Decrement(1)] => Token::Pattern(PreCompiledPattern::SetToZero),
                 &[Token::Decrement(1), Token::Next(offset), Token::Increment(factor), Token::Prev(rev_offset)] if offset == rev_offset => Token::Pattern(PreCompiledPattern::Multiply { dest_offset: offset as isize, factor: factor }),
                 &[Token::Decrement(1), Token::Prev(offset), Token::Increment(factor), Token::Next(rev_offset)] if offset == rev_offset => Token::Pattern(PreCompiledPattern::Multiply { dest_offset: -(offset as isize), factor: factor }),
+                &[Token::Next(offset), Token::Increment(factor), Token::Prev(rev_offset), Token::Decrement(1)] if offset == rev_offset => Token::Pattern(PreCompiledPattern::Multiply { dest_offset: offset as isize, factor: factor }),
+                &[Token::Prev(offset), Token::Increment(factor), Token::Next(rev_offset), Token::Decrement(1)] if offset == rev_offset => Token::Pattern(PreCompiledPattern::Multiply { dest_offset: -(offset as isize), factor: factor }),
                 _ => Token::Closure(block),
             },
             _ => token,
