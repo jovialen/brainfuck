@@ -50,3 +50,19 @@ fn cat_string() {
     let str: String = buf.into_iter().map(|v| v as char).collect();
     assert_eq!(str, "This is the way".to_string());
 }
+
+#[test]
+fn god_morgen() {
+    let src = include_str!("./god_morgen.bf").to_string();
+    let bf = lex(src);
+
+    assert!(bf.is_ok());
+
+    let mut buf = Vec::new();
+    let mut input = Cursor::new(vec![]);
+    let res = interpret(&bf.unwrap(), &mut input, &mut buf);
+    assert!(res.is_ok());
+
+    let str: String = buf.into_iter().map(|v| v as char).collect();
+    assert_eq!(str, "God Morgen!".to_string());
+}

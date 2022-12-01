@@ -4,9 +4,7 @@
 # VS Code
 .vscode
 
-# Brainfuck test programs
-*.b
-*.bf
-
 # Debugging files
-perf.svg
+/tmp
+perf.*
+flamegraph.svg

@@ -131,7 +131,11 @@ where
                         ptr.wrapping_sub(dest_offset.abs() as usize)
                     } % memory.len();
 
-                    memory[dest] = memory[*ptr].wrapping_mul(factor);
+                    // First get the result of the multiplication, then add it
+                    // to the value already in the destination cell
+                    let mul_res = memory[*ptr].wrapping_mul(factor);
+                    memory[dest] = memory[dest].wrapping_add(mul_res);
+
                     memory[*ptr] = 0;
                 }
             },
